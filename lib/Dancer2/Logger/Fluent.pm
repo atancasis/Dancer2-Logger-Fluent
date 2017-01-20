@@ -2,7 +2,7 @@ package Dancer2::Logger::Fluent;
 
 use strict;
 use 5.008_005;
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use Moo;
 use Fluent::Logger;
@@ -34,7 +34,7 @@ has port => (
 has timeout => (
     is        => 'ro',
     isa       => Num,
-    predicate => 1,
+    predicate => '_has_timeout',
 );
 
 has socket => (
@@ -45,7 +45,7 @@ has socket => (
 has prefer_integer => (
     is        => 'ro',
     isa       => Str,
-    predicate => 1,
+    predicate => '_has_prefer_integer',
 );
 
 has event_time => (
@@ -56,13 +56,13 @@ has event_time => (
 has buffer_limit => (
     is        => 'ro',
     isa       => Int,
-    predicate => 1,
+    predicate => '_has_buffer_limit',
 );
 
 has buffer_overflow_handler => (
     is        => 'ro',
     isa       => CodeRef,
-    predicate => 1,
+    predicate => '_has_buffer_overflow_handler',
 );
 
 has truncate_buffer_at_overflow => (
@@ -83,7 +83,7 @@ sub _connect {
             PeerAddr  => $self->host || '127.0.0.1',
             PeerPort  => $self->port || 24224,
             Proto     => 'tcp',
-            Timeout   => $self->has_timeout ? $self->timeout : 3.0,
+            Timeout   => $self->_has_timeout ? $self->timeout : 3.0,
             ReuseAddr => 1,
     );
 }
@@ -97,12 +97,12 @@ sub _fluent {
         $self->{_fluent} = Fluent::Logger->new(
             host                        => $self->host || '127.0.0.1',
             port                        => $self->port || 24224,
-            timeout                     => $self->has_timeout ? $self->timeout : 3.0,
+            timeout                     => $self->_has_timeout ? $self->timeout : 3.0,
             socket                      => $self->socket,
-            prefer_integer              => $self->has_prefer_integer ? $self->prefer_integer : 1,
+            prefer_integer              => $self->_has_prefer_integer ? $self->prefer_integer : 1,
             event_time                  => $self->event_time || 0,
-            buffer_limit                => $self->has_buffer_limit ? $self->buffer_limit : 8388608,
-            buffer_overflow_handler     => $self->has_buffer_overflow_handler ? $self->buffer_overflow_handler : sub { undef },
+            buffer_limit                => $self->_has_buffer_limit ? $self->buffer_limit : 8388608,
+            buffer_overflow_handler     => $self->_has_buffer_overflow_handler ? $self->buffer_overflow_handler : sub { undef },
             truncate_buffer_at_overflow => $self->truncate_buffer_at_overflow || 0,
         );
     }
@@ -154,7 +154,7 @@ Dancer2::Logger::Fluent - Dancer2 logger engine for Fluent::Logger
 
 =head1 VERSION
 
-version 0.03
+version 0.04
 
 =head1 SYNOPSIS
 
