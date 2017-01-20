@@ -2,10 +2,12 @@ package Dancer2::Logger::Fluent;
 
 use strict;
 use 5.008_005;
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use Moo;
 use Fluent::Logger;
+use IO::Socket::INET;
+use IO::Socket::UNIX;
 
 use File::Basename 'basename';
 use Time::Moment;
@@ -13,11 +15,6 @@ use Sys::Hostname;
 
 use Dancer2::Core::Types;
 with 'Dancer2::Core::Role::Logger';
-
-has 'fluent' => (
-    is        => 'lazy',
-    predicate => 1,
-);
 
 has tag_prefix => (
     is        => 'lazy',
@@ -78,45 +75,72 @@ sub _build_tag_prefix {
     return $self->{tag_prefix} || $self->app_name || $ENV{DANCER_APPDIR} || basename($0);
 }
 
-sub _build_fluent {
+sub _connect {
+    my $self = shift;
+    return defined $self->socket
+        ? IO::Socket::UNIX->new( Peer => $self->socket )
+        : IO::Socket::INET->new(
+            PeerAddr  => $self->host || '127.0.0.1',
+            PeerPort  => $self->port || 24224,
+            Proto     => 'tcp',
+            Timeout   => $self->has_timeout ? $self->timeout : 3.0,
+            ReuseAddr => 1,
+    );
+}
+
+sub _fluent {
     my $self = shift;
 
-    my $fluent = Fluent::Logger->new(
-        host                        => $self->host || '127.0.0.1',
-        port                        => $self->port || 24224,
-        timeout                     => $self->has_timeout ? $self->timeout : 3.0,
-        socket                      => $self->socket,
-        prefer_integer              => $self->has_prefer_integer ? $self->prefer_integer : 1,
-        event_time                  => $self->event_time || 0,
-        buffer_limit                => $self->has_buffer_limit ? $self->buffer_limit : 8388608,
-        buffer_overflow_handler     => $self->has_buffer_overflow_handler ? $self->buffer_overflow_handler : sub { undef },
-        truncate_buffer_at_overflow => $self->truncate_buffer_at_overflow || 0,
-    );
+    return unless $self->_connect;
 
-    return $fluent;
+    unless ( exists $self->{_fluent} ) {
+        $self->{_fluent} = Fluent::Logger->new(
+            host                        => $self->host || '127.0.0.1',
+            port                        => $self->port || 24224,
+            timeout                     => $self->has_timeout ? $self->timeout : 3.0,
+            socket                      => $self->socket,
+            prefer_integer              => $self->has_prefer_integer ? $self->prefer_integer : 1,
+            event_time                  => $self->event_time || 0,
+            buffer_limit                => $self->has_buffer_limit ? $self->buffer_limit : 8388608,
+            buffer_overflow_handler     => $self->has_buffer_overflow_handler ? $self->buffer_overflow_handler : sub { undef },
+            truncate_buffer_at_overflow => $self->truncate_buffer_at_overflow || 0,
+        );
+    }
+
+    return $self->{_fluent};
 }
 
 sub DESTROY {
     my $self = shift;
-    return unless $self->has_fluent;
-    $self->fluent->{pending} ||= '';  # Fluent::Logger->close performs length checks without checking if value is defined first
-    $self->fluent->close;
+    return unless $self->_fluent;
+    $self->_fluent->{pending} ||= '';  # Fluent::Logger->close performs length checks without checking if value is defined first
+    $self->_fluent->close;
 }
 
 sub log {
     my ($self, $level, $message) = @_;
 
-    $self->fluent->post(
-        $self->tag_prefix,
-        {
-            env       => $ENV{DANCER_ENVIRONMENT} || $ENV{PLACK_ENV} || 'development',
-            timestamp => Time::Moment->now_utc->strftime("%Y-%m-%dT%H:%M:%S.%6N%Z"),
-            host      => hostname(),
-            level     => $level,
-            message   => $message,
-            pid       => $$
+    my $fluent_message = {
+        env       => $ENV{DANCER_ENVIRONMENT} || $ENV{PLACK_ENV} || 'development',
+        timestamp => Time::Moment->now_utc->strftime("%Y-%m-%dT%H:%M:%S.%6N%Z"),
+        host      => hostname(),
+        level     => $level,
+        message   => $message,
+        pid       => $$
+    };
+
+    # Queue pending messages until connectivity is restored
+    unless ( $self->_fluent ) {
+        push @{ $self->{pending} }, $fluent_message;
+        return;
+    }
+
+    if ( @{ $self->{pending} } ) {
+        while ( my $pending_message = shift @{ $self->{pending} } ) {
+            $self->_fluent->post( $self->tag_prefix, $pending_message );
         }
-    );
+    }
+    $self->_fluent->post( $self->tag_prefix, $fluent_message );
 }
 
 1;
@@ -130,7 +154,7 @@ Dancer2::Logger::Fluent - Dancer2 logger engine for Fluent::Logger
 
 =head1 VERSION
 
-version 0.02
+version 0.03
 
 =head1 SYNOPSIS
 
@@ -139,6 +163,10 @@ version 0.02
 =head1 DESCRIPTION
 
 Implements a structured event logger for Fluent via L<Fluent::Logger>.
+
+When a connection to the C<fluentd> agent can't be established, messages
+are "queued" internally. These messages will be flushed upon subsequent
+calls to C<log()>, as soon as a connection is established.
 
 =head1 METHODS
 

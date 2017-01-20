@@ -4,7 +4,7 @@ Dancer2::Logger::Fluent - Dancer2 logger engine for Fluent::Logger
 
 # VERSION
 
-version 0.02
+version 0.03
 
 # SYNOPSIS
 
@@ -13,6 +13,10 @@ version 0.02
 # DESCRIPTION
 
 Implements a structured event logger for Fluent via [Fluent::Logger](https://metacpan.org/pod/Fluent::Logger).
+
+When a connection to the `fluentd` agent can't be established, messages
+are "queued" internally. These messages will be flushed upon subsequent
+calls to `log()`, as soon as a connection is established.
 
 # METHODS
 
