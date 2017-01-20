@@ -46,6 +46,7 @@
       },
       "test" : {
          "requires" : {
+            "HTTP::Request::Common" : "6.11",
             "Plack::Test" : "0",
             "Test::More" : "0.96",
             "Test::Pod" : "1.51",
