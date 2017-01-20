@@ -4,7 +4,7 @@ Dancer2::Logger::Fluent - Dancer2 logger engine for Fluent::Logger
 
 # VERSION
 
-version 0.01
+version 0.02
 
 # SYNOPSIS
 

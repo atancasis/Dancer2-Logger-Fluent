@@ -1,5 +1,7 @@
 Revision history for Dancer2-Logger-Fluent
 
-0.01  2017-01-18 17:22:10 SGT
+0.02  2017-01-20 11:06:56 SGT
+        - Fix tests to not expect fluent to be running
 
+0.01  2017-01-18 17:22:10 SGT
         - Initial release
