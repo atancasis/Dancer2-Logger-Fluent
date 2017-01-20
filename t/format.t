@@ -10,7 +10,7 @@ use Sys::Hostname;
 plan tests => 2;
 
 use Fluent::Logger;
-
+sub Fluent::Logger::_connect {}
 sub Fluent::Logger::post {
     my ($self, $tag, $msg) = @_;
     subtest fluent => sub {
@@ -23,7 +23,6 @@ sub Fluent::Logger::post {
         is $msg->{host}        => hostname();
     }
 }
-
 undef &Fluent::Logger::close;
 
 {
