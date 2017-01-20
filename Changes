@@ -1,5 +1,8 @@
 Revision history for Dancer2-Logger-Fluent
 
+0.03  2017-01-20 12:53:06 SGT
+        - Queue messages for deferred flushing if fluent is down (#1)
+
 0.02  2017-01-20 11:06:56 SGT
         - Fix tests to not expect fluent to be running
 
