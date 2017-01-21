@@ -1,5 +1,8 @@
 Revision history for Dancer2-Logger-Fluent
 
+0.05  2017-01-21 15:33:04 SGT
+        - Run POD-related tests only for authors (RT #119920)
+
 0.04  2017-01-20 16:22:24 SGT
         - Fix naked predicate subroutines on Test::Pod::Coverage (RT #119920)
 
