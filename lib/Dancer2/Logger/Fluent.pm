@@ -135,7 +135,7 @@ sub log {
         return;
     }
 
-    if ( @{ $self->{pending} } ) {
+    if ( exists $self->{pending} and @{ $self->{pending} } ) {
         while ( my $pending_message = shift @{ $self->{pending} } ) {
             $self->_fluent->post( $self->tag_prefix, $pending_message );
         }
