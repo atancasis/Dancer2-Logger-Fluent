@@ -2,7 +2,7 @@ package Dancer2::Logger::Fluent;
 
 use strict;
 use 5.008_005;
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use Moo;
 use Fluent::Logger;
@@ -154,7 +154,7 @@ Dancer2::Logger::Fluent - Dancer2 logger engine for Fluent::Logger
 
 =head1 VERSION
 
-version 0.05
+version 0.06
 
 =head1 SYNOPSIS
 

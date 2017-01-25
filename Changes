@@ -1,5 +1,8 @@
 Revision history for Dancer2-Logger-Fluent
 
+0.06  2017-01-25 08:39:14 SGT
+        - Fix deref on pending messages without first checking for existence
+
 0.05  2017-01-21 15:33:04 SGT
         - Run POD-related tests only for authors (RT #119920)
 
